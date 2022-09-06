@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appsdistribuidas #nombre de nuestro deployment
+spec:
+  replicas: 3 # numero de pods replicas que deseamos que se creen 
+  selector:
+    matchLabels:
+      role: hello
+  template:
+    metadata:
+      labels:
+        role: hello # etiqueta que identificara y comunicara a los pods con el label de servicio
+    spec:
+      containers:
+      - name: hello # nombre que asiganmos al contenedor
+        image: gcr.io/google-samples/hello-app:1.0 # asignamos imagen
+        ports:
+        - containerPort: 8080 #asignamos un puerto
+
+---
+# creacion de un servicio para interactuar con los pods 
+apiVersion: v1
+kind: Service
+metadata:
+  name: appsdistribuidas #nombre del servicio
+spec:
+  type: LoadBalancer #tipo de servicio 
+  ports:
+  - port: 8080 # asignamos el puerto 8080 del contenedor 
+    targetPort: 8080
+  selector:
+    role: hello # nombre que interactua con el pod debe ser igual label y redirigira el trafico a todos los pods con esa etiqueta

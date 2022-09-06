@@ -1,4 +1,9 @@
 # Proyecto de la asignatura de Aplicaciones distribuidas
+## Links
+
+- [Explicacion tecnica](https://www.youtube.com/watch?v=1oE1Viwtsj4)
+- [Manual de usuario](https://www.youtube.com/watch?v=me6lQjq2J-4)
+
 ## Descripción del proyecto
 El proyecto consiste en diseñar, implementar y cotizar una solución de balanceo de carga y
 failover

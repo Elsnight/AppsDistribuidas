@@ -26,107 +26,103 @@ flujo o cualquier diagrama con muchas formas para visualizar correctamente la in
 
 ## Codigo de implementacion
 
-
-Un documento, en general, va a tener un título principal y luego una serie de
-secciones, con una jerarquía inferior, que estructuran el texto en partes
-relacionadas. Un `README`, por ejemplo, tendrá, tras una introducción,
-instrucciones para instalar, para ejecutar y quizás una nota sobre la licencia
-o sobre cómo colaborar con el mismo.
-
-Si quieres poner cabeceras a tu texto, algo así como los títulos de cada
-sección, solo tienes que escribir el carácter almohadilla y un espacio antes
-de la frase a resaltar. Cuantas más almohadillas pongas, más abajo en la
-jerarquía estará esa cabecera. Es decir, `# Este es el nombre de mi proyecto`
-y `## Cómo instalar`. `### Instalar desde GitHub` y así.
-
-Por ejemplo, si quieres tener tu texto en cursiva, solo necesitas abrir y
-cerrar la oración con un asterisco, tal que `*este texto se muestra en
-cursiva*`. También vale la barra baja "`_`" en lugar del asterisco. ¿Qué tengo
-que hacer si quiero poner ese mismo texto en negrita? En lugar de utilizar un
-asterisco, utiliza dos. También vale para el caso del carácter "barra baja".
-Osea, `**este texto estaría en negrita**`. Y `**_este otro estaría en negrita y
-cursiva_**`.
-
-Markdown no interpretará, al menos por defecto, cuando quieras incluir
-en tu texto un enlace a una página web. Para incluir uno, tienes que hacerlo
-de la forma siguiente:`[Texto a mostrar](URL a la que ir)`. ¿Así de fácil? Así
-de fácil.
-
-Insertar imágenes es muy parecido a insertar enlaces: la estructura es
-la misma, salvo que tenemos que poner un signo de admiración justo antes
-del primer corchete. Osea, `![Texto a mostrar](URL a la imagen)`. En cuanto
-al "texto a mostrar", es el texto que verás si la imagen no carga o, si por
-ejemplo has exportado el documento a HTML, el texto que se muestra
-al poner el cursor del ratón encima.
-
-¿Qué hay en un texto más enriquecedor que hacer referencia a otros textos
-o, incluso, a lo que simplemente alguien dijo en algún momento? Para insertar
-una cita, solo necesitamos iniciar la cita con el carácter "mayor que". Imagina
-que queremos citar a John Johnson, entonces: `> "Primero resuelve el problema.
-Entonces, escribe el código"`. Este texto se interpretará como:
-
-> "Primero resuelve el problema. Entonces, escribe el código"
-
-Las listas tampoco podían faltar. Aquí tenemos dos opciones:
-* Listas sin orden: para estas listas solamente necesitas poner cada elemento
-de la lista en una nueva línea y preceder dicha línea por un asterisco y
-un espacio. Un ejemplo de lista sería:
+1. Iniciamos minikube para nuestro cluster(   Tendremos un nodo master y tres nodos de worker
+)
 ```bash
-`* Resolver el problema`
-`* Escribir el código`
-`* Compartir la solución`
+minikube start --nodes 4 # Iniciar un nuevo clúster con un número dado de nodos
+```
+2. Revisamos los nodos con el comando y rol que tiene donde tendremos un nodo control-plane
+```bash
+kubectl get nodes
+```
+3. Revisamos el estado de cada uno 
+```bash
+minikube status 
+```
+4. Vamos aplicar nuestro archivo deployed (*Un controlador de Deployment proporciona actualizaciones declarativas para los Pods y los ReplicaSets*). Recuerda crear un archivo copiar el codigo y terminar con yaml. Ejemplo: deployment-svc-loadBalancer.yaml
+```bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appsdistribuidas #nombre de nuestro deployment
+spec:
+  replicas: 3 # numero de pods replicas que deseamos que se creen 
+  selector:
+    matchLabels:
+      role: hello
+  template:
+    metadata:
+      labels:
+        role: hello # etiqueta que identificara y comunicara a los pods con el label de servicio
+    spec:
+      containers:
+      - name: hello # nombre que asiganmos al contenedor
+        image: gcr.io/google-samples/hello-app:1.0 # asignamos imagen
+        ports:
+        - containerPort: 8080 #asignamos un puerto
+
+---
+# creacion de un servicio para interactuar con los pods 
+apiVersion: v1
+kind: Service
+metadata:
+  name: appsdistribuidas #nombre del servicio
+spec:
+  type: LoadBalancer #tipo de servicio 
+  ports:
+  - port: 8080 # asignamos el puerto 8080 del contenedor 
+    targetPort: 8080
+  selector:
+    role: hello # nombre que interactua con el pod debe ser igual label y redirigira el trafico a todos los pods con esa etiqueta
+
+```
+5. Al archivo deployment vamos a aplicarlo 
+```bash
+kubectl apply -f deployment-svc-loadBalancer.yaml
+```
+6. Para ver los servicios y los pods generados aplicamos el comando.
+```bash
+kubectl get all
+```
+7. Para poder ver las *IPS* de los pods asociados al servicio 
+```bash
+kubectl describe svc appsdistribuidas
+```
+8. Para ver las *IPS* de cada pod usamos el comando 
+```bash
+kubectl get pods -o wide
+```
+9. En una ventana extra vamos a aplicar el comando que nos recomeinda minikube para load balancer, esto nos asignara un ip publica
+```bash
+minikube tunnel
+```
+10. Para ver la *IP* publica usamos el comando 
+```bash
+kubectl get svc
+```
+12. Para probar el balanceador de carga usaremos la ip publica con el puerto asignado, donde el Hostname cambiara de acuerdo al pod que ingrese 
+```bash
+curl 127.0.0.1:8080
 ```
 
-Aquí todavía continúa el texto.
-  Esta es la primera línea del bloque de código.
-     La segunda línea tiene aún más sangría.
-  Esta es otra línea del bloque de código.
-Aquí vuelve a empezar el texto
+## Pruebas con Jmeter
+Con la ayuda de la herramienta Jmeter vamos a poner a prueba nuestro balanceador de carga.
+- Creacion de un `Thread Group`
+<img src="https://i.ibb.co/x7pMPgQ/jmeter1.png" alt="drawing" width="700"/>
 
-* Listas ordenadas: tienes que precederlas por un número seguido de un punto:
-```bash
-`1. Resolver el problema`
-`2. Escribir el código`
-`3. Compartir la solución`
-```
-Imagina que por alguna razón, no numeras bien la lista. ¡No pasa nada! El
-intérprete se dará cuenta y mostrará correctamente la lista ordenada.
+- Implementacion de las propiedas para evaluar como usuarios, el tiempo de demora y el bucle
+<img src="https://i.ibb.co/cvK03vw/jmeter2.png" alt="drawing" width="700"/>
 
-¿Y qué pasa si quiero hacer una lista dentro de un elemento de una lista?
-Solamente tienes que añadir un nivel de indentación. Por ejemplo:
+- Llamada request `HTTP Request`
+<img src="https://i.ibb.co/x2tCT52/jmeter3.png" alt="drawing" width="700"/>
 
-```bash
-`* Resolver el problema`
-` * Mirar posibles soluciones`
-` * Establecer cual es la más adecuada`
-`* Escribir el código`
-` * Elegir un lenguaje`
-` * Elegir los tipos de dato más adecuados`
-`* Compartir la solución`
-` * Publicarla en Github`
-` * Escribir un artículo sobre ello`
-```
+- Asignacion de IP y puerto
+<img src="https://i.ibb.co/GW9QKXW/jmeter4.png" alt="drawing" width="700"/>
 
-Resultaría en:
-* Resolver el problema
- * Mirar posibles soluciones
- * Establecer cual es la más adecuada
-* Escribir el código
- * Elegir un lenguaje
- * Elegir los tipos de dato más adecuados
-* Compartir la solución
- * Publicarla en Github
- * Escribir un artículo sobre ello
+- Agregar oyentes o `listener`
+<img src="https://i.ibb.co/hs6pcCG/jmeter5.png" alt="drawing" width="700"/>
 
-Con esta pincelada, tienes casi todo lo que hay que saber sobre Markdown.
-Pero Markdown es una base que tiene diferentes *sabores*. Algunos, 
-[como el de GitHub](https://guides.github.com/features/mastering-markdown/),
-tienen algunas otras marcas que pueden ser muy útiles, como listas de
-tareas, tablas o resaltadores de sintaxis. Incluso emojis.
+-Verificacion de errores
+<img src="https://i.ibb.co/j3Y8RFM/jmeter6.png" alt="drawing" width="700"/>
 
-## *En resumen*
 
-Markdown es un buen lenguaje para enriquecer el texto plano. Con
-unas pocas reglas de sintaxis puede hacer que tu texto incluya
-negritas, cursivas o cabeceras entre otros. Además, es el lenguaje que
-se usa en webs como las que se alojan en Github. Pero ese ya es otro capítulo.

@@ -122,7 +122,7 @@ Con la ayuda de la herramienta Jmeter vamos a poner a prueba nuestro balanceador
 - Agregar oyentes o `listener`
 <img src="https://i.ibb.co/hs6pcCG/jmeter5.png" alt="drawing" width="700"/>
 
--Verificacion de errores
+- Verificacion de errores
 <img src="https://i.ibb.co/j3Y8RFM/jmeter6.png" alt="drawing" width="700"/>
 
 
